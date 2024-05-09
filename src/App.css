@@ -1,38 +1,132 @@
-.App {
+:root {
+  --bg-color: #008170;
+  --text-color: #ffffff;
+  --theme-color: #005b41;
+  --secondary-color: #232d3f;
+}
+
+body {
+  background-color: var(--bg-color);
+  font-family: Geneva, Verdana, Tahoma, sans-serif;
+}
+
+.app {
+  margin: 5vh auto;
+  width: 60rem;
   text-align: center;
+  color: var(--text-color);
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.app-name {
+  text-align: left;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.segments {
+  margin-top: 1rem;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.segment {
+  background-color: var(--secondary-color);
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.left-seg {
+  border-top-left-radius: 0.5rem;
+  border-bottom-left-radius: 0.5rem;
+}
+
+.right-seg {
+  border-top-right-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.status {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.picked {
+  background-color: var(--theme-color);
+}
+
+.card {
+  box-sizing: border-box;
+  background-color: rgba(255, 255, 255, 0.2);
+  margin: 1rem 0;
+  border-radius: 0.5rem;
+  display: flex;
+}
+
+.contacts {
+  flex: 1;
+}
+
+.main {
+  flex: 3;
+  height: 60vh;
+  background-color: whitesmoke;
+  border-top-right-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
   display: flex;
   flex-direction: column;
+}
+
+.main .messages {
+  flex: 6;
+}
+
+.main .edit {
+  border-top: solid 1px rgba(255, 255, 255, 0.5);
+  flex: 1;
+  display: flex;
+}
+
+.edit .edit-box {
+  font-size: large;
+  padding: 5px;
+  border: none;
+  flex: 5;
+  resize: none;
+}
+
+.edit-box:focus {
+  outline: solid 1px var(--theme-color);
+}
+
+.edit .buttons {
+  flex: 1;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  justify-content: space-evenly;
+  flex-direction: column;
 }
 
-.App-link {
-  color: #61dafb;
+.tip {
+  font-size: 10px;
+  color: gray;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.send-btn {
+  padding: 6px 20px;
+  font-size: 20px;
+  background-color: white;
+  border: none;
+  border-bottom: solid 5px var(--theme-color);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  color: var(--theme-color);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: white;
+  margin-right: 5px;
+}
+
+.connected {
+  background-color: lime;
 }
