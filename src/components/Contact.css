@@ -1,0 +1,29 @@
+@import url(../vars.css);
+
+.contact {
+  padding: 6px 10px;
+  border-bottom: solid 1px var(--theme-color);
+  text-align: left;
+}
+
+.name {
+  font-weight: bold;
+  font-size: larger;
+  max-width: 7em;
+}
+
+.last-message {
+  color: lightblue;
+  font-size: x-small;
+  max-width: 14em;
+}
+
+.offline {
+  color: var(--secondary-color);
+}
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
