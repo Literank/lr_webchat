@@ -1,0 +1,35 @@
+@import url(../vars.css);
+
+.wrapper {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.message {
+  width: max-content;
+}
+
+.self-side {
+  justify-content: flex-end;
+
+  .bubble {
+    background-color: var(--theme-color);
+  }
+
+  .meta {
+    text-align: right;
+    padding-right: 0.4em;
+  }
+}
+
+.meta {
+  color: darkgray;
+  text-align: left;
+  padding-left: 0.4em;
+}
+
+.bubble {
+  background-color: var(--bg-color);
+  padding: 0.6em;
+  border-radius: 0.8em;
+}
