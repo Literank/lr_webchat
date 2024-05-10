@@ -1,6 +1,7 @@
 import "./App.css";
 import Contact from "./components/contact";
 import Message from "./components/message";
+import TitleBar from "./components/ttile-bar";
 
 function App() {
   const messages = [
@@ -57,6 +58,7 @@ function App() {
           ))}
         </div>
         <div className="main">
+          <TitleBar username={contacts[0].username} />
           <div className="messages">
             {messages.map((e) => (
               <Message

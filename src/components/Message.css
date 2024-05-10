@@ -29,7 +29,7 @@
 }
 
 .bubble {
-  background-color: var(--bg-color);
+  background-color: var(--secondary-color);
   padding: 0.6em;
   border-radius: 0.8em;
 }
