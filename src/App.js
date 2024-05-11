@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import Contact from "./components/contact";
 import Message from "./components/message";
@@ -12,25 +12,12 @@ function App() {
   const [user, setUser] = useState({ emoji: "", name: "" });
   const [conn, setConn] = useState(null);
   const [contacts, setContacts] = useState([]);
+  const [contactMessages, setContactMessages] = useState({});
   const [pickedContact, setPickedContact] = useState(null);
-  const messages = [
-    {
-      username: "Alice",
-      message: "Hello there",
-    },
-    {
-      username: "Bob",
-      message: "How's everything?",
-    },
-    {
-      username: "Alice",
-      message: "Great! Wanna have a drink?",
-    },
-    {
-      username: "Bob",
-      message: "Sure",
-    },
-  ];
+  const [typedContent, setTypedContent] = useState("");
+  const [messages, setMessages] = useState([]);
+  const resultEndRef = useRef(null);
+
   useEffect(() => {
     if (!user.name) return;
     const socket = io("http://localhost:4000");
@@ -41,13 +28,36 @@ function App() {
       const users = new Map(serialUsers);
       setContacts([...users.values()].filter((e) => e.sid !== socket.id));
     });
+    socket.on("chat", (data) => {
+      const { from, msg } = data;
+      setMessages((m) => [...m, { name: "", message: msg, isSelf: false }]);
+      setContactMessages((m) => {
+        return { ...m, [from]: msg };
+      });
+    });
     socket.emit("user-join", user);
     setConn(socket);
   }, [user]);
 
+  useEffect(() => {
+    if (messages.length > 0)
+      resultEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   const login = (emoji, name) => {
     setUser({ emoji, name });
     setLogged(true);
+  };
+  const chat = (toSid, message) => {
+    if (!conn) {
+      return;
+    }
+    setMessages((m) => [...m, { name: user.name, message, isSelf: true }]);
+    conn.emit("chat", { to: toSid, from: conn.id, msg: message });
+    setContactMessages((m) => {
+      return { ...m, [toSid]: message };
+    });
+    setTypedContent("");
   };
   return (
     <div className="app">
@@ -68,9 +78,10 @@ function App() {
                 <Contact
                   key={e.sid}
                   username={e.emoji + " " + e.name}
-                  message={e.message}
+                  message={contactMessages[e.sid] || ""}
                   onClick={() => {
                     setPickedContact(e);
+                    setMessages([]);
                   }}
                 />
               ))}
@@ -82,19 +93,37 @@ function App() {
                     username={pickedContact.emoji + " " + pickedContact.name}
                   />
                   <div className="messages">
-                    {messages.map((e) => (
+                    {messages.map((e, i) => (
                       <Message
-                        key={e.message}
-                        username={e.username}
+                        key={i}
+                        username={e.isSelf ? user.name : pickedContact.name}
                         message={e.message}
-                        isSelf={e.username === "Bob"}
+                        isSelf={e.isSelf}
                       />
                     ))}
+                    <div ref={resultEndRef}></div>
                   </div>
                   <div className="edit">
-                    <textarea className="edit-box" placeholder="Type here" />
+                    <textarea
+                      className="edit-box"
+                      placeholder="Type here"
+                      value={typedContent}
+                      onChange={(e) => setTypedContent(e.target.value)}
+                      onKeyUp={(e) => {
+                        if (e.ctrlKey && e.key === "Enter") {
+                          chat(pickedContact.sid, typedContent);
+                        }
+                      }}
+                    />
                     <div className="buttons">
-                      <button className="send-btn">Send</button>
+                      <button
+                        className="send-btn"
+                        onClick={() => {
+                          chat(pickedContact.sid, typedContent);
+                        }}
+                      >
+                        Send
+                      </button>
                       <span className="tip">Ctrl+Enter to send</span>
                     </div>
                   </div>

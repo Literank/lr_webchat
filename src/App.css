@@ -87,6 +87,7 @@ body {
 .main .messages {
   flex: 6;
   padding: 10px;
+  overflow-y: auto;
 }
 
 .main .edit {

@@ -77,7 +77,7 @@ const LoginForm = (props) => {
           />
         </div>
       </div>
-      <div className="buttons">
+      <div className="login-buttons">
         <button className="send-btn" onClick={login}>
           Login
         </button>

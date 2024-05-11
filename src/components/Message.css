@@ -7,6 +7,8 @@
 
 .message {
   width: max-content;
+  margin-bottom: 0.2em;
+  max-width: 25em;
 }
 
 .self-side {
