@@ -15,7 +15,6 @@ function App() {
   const [contactMessages, setContactMessages] = useState({});
   const [pickedContact, setPickedContact] = useState(null);
   const [typedContent, setTypedContent] = useState("");
-  const [messages, setMessages] = useState([]);
   const resultEndRef = useRef(null);
 
   useEffect(() => {
@@ -30,9 +29,11 @@ function App() {
     });
     socket.on("chat", (data) => {
       const { from, msg } = data;
-      setMessages((m) => [...m, { name: "", message: msg, isSelf: false }]);
-      setContactMessages((m) => {
-        return { ...m, [from]: msg };
+      const entry = { name: "", message: msg, isSelf: false };
+      setContactMessages((cm) => {
+        const oldMessages = cm[from] || [];
+        const newMessages = [...oldMessages, entry];
+        return { ...cm, [from]: newMessages };
       });
     });
     socket.emit("user-join", user);
@@ -40,24 +41,37 @@ function App() {
   }, [user]);
 
   useEffect(() => {
+    if (!pickedContact) return;
+    const messages = contactMessages[pickedContact.sid] || [];
     if (messages.length > 0)
       resultEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [contactMessages, pickedContact]);
 
   const login = (emoji, name) => {
     setUser({ emoji, name });
     setLogged(true);
   };
   const chat = (toSid, message) => {
-    if (!conn) {
+    if (!conn || !message.trim()) {
       return;
     }
-    setMessages((m) => [...m, { name: user.name, message, isSelf: true }]);
+    const entry = { name: user.name, message, isSelf: true };
     conn.emit("chat", { to: toSid, from: conn.id, msg: message });
-    setContactMessages((m) => {
-      return { ...m, [toSid]: message };
+    setContactMessages((cm) => {
+      const oldMessages = cm[toSid] || [];
+      const newMessages = [...oldMessages, entry];
+      return { ...cm, [toSid]: newMessages };
     });
     setTypedContent("");
+  };
+  const lastMessage = (messages) => {
+    if (!messages) {
+      return "";
+    }
+    if (messages.length > 0) {
+      return messages[messages.length - 1].message;
+    }
+    return "";
   };
   return (
     <div className="app">
@@ -78,10 +92,9 @@ function App() {
                 <Contact
                   key={e.sid}
                   username={e.emoji + " " + e.name}
-                  message={contactMessages[e.sid] || ""}
+                  message={lastMessage(contactMessages[e.sid])}
                   onClick={() => {
                     setPickedContact(e);
-                    setMessages([]);
                   }}
                 />
               ))}
@@ -93,7 +106,7 @@ function App() {
                     username={pickedContact.emoji + " " + pickedContact.name}
                   />
                   <div className="messages">
-                    {messages.map((e, i) => (
+                    {(contactMessages[pickedContact.sid] || []).map((e, i) => (
                       <Message
                         key={i}
                         username={e.isSelf ? user.name : pickedContact.name}
