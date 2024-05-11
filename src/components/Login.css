@@ -1,0 +1,40 @@
+@import url(../vars.css);
+
+.login-form {
+  box-sizing: border-box;
+  background-color: rgba(255, 255, 255, 0.2);
+  width: 20em;
+  margin: 1em auto;
+  border-radius: 0.5rem;
+  padding: 1em;
+}
+
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1em;
+
+  label {
+    width: 5em;
+    margin-right: 1em;
+  }
+}
+
+.input-box {
+  border: none;
+  font-size: large;
+  width: 100%;
+  border-bottom: solid 2px var(--theme-color);
+}
+
+.input-box:focus {
+  outline: solid 1px var(--theme-color);
+}
+
+.input-option {
+  text-align: center;
+}
+
+.buttons {
+  margin-top: 2em;
+}
