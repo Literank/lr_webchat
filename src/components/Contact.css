@@ -4,6 +4,7 @@
   padding: 6px 10px;
   border-bottom: solid 1px var(--theme-color);
   text-align: left;
+  cursor: pointer;
 }
 
 .name {

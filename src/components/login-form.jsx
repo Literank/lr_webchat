@@ -29,7 +29,8 @@ const emojis = [
   "🦄", // Unicorn
 ];
 const LoginForm = (props) => {
-  const [emoji, setEmoji] = useState("");
+  const rndEmoji = emojis[Math.floor(emojis.length * Math.random())];
+  const [emoji, setEmoji] = useState(rndEmoji);
   const [name, setName] = useState("");
   const login = () => {
     if (!emoji) {

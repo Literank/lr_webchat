@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import Contact from "./components/contact";
 import Message from "./components/message";
-import TitleBar from "./components/ttile-bar";
+import TitleBar from "./components/title-bar";
 import LoginForm from "./components/login-form";
 import clsx from "clsx";
 import io from "socket.io-client";
@@ -11,6 +11,8 @@ function App() {
   const [logged, setLogged] = useState(false);
   const [user, setUser] = useState({ emoji: "", name: "" });
   const [conn, setConn] = useState(null);
+  const [contacts, setContacts] = useState([]);
+  const [pickedContact, setPickedContact] = useState(null);
   const messages = [
     {
       username: "Alice",
@@ -29,31 +31,19 @@ function App() {
       message: "Sure",
     },
   ];
-  const contacts = [
-    {
-      username: "🦁 Alice",
-      message: "Sure",
-    },
-    {
-      username: "♣ Cindy",
-      message: "Where r u",
-    },
-    {
-      username: "🐯 Doug Smith",
-      message: "Hi",
-    },
-    {
-      username: "🐴 Emily",
-      message: "How's your assignment? I didn't do much yesterday",
-    },
-  ];
   useEffect(() => {
+    if (!user.name) return;
     const socket = io("http://localhost:4000");
     socket.on("error", (error) => {
       console.error("Socket error:", error);
     });
+    socket.on("contacts", (serialUsers) => {
+      const users = new Map(serialUsers);
+      setContacts([...users.values()].filter((e) => e.sid !== socket.id));
+    });
+    socket.emit("user-join", user);
     setConn(socket);
-  }, []);
+  }, [user]);
 
   const login = (emoji, name) => {
     setUser({ emoji, name });
@@ -76,30 +66,42 @@ function App() {
             <div className="contacts">
               {contacts.map((e) => (
                 <Contact
-                  username={e.username}
+                  key={e.sid}
+                  username={e.emoji + " " + e.name}
                   message={e.message}
-                  isOffline={e.username.includes("Emily")}
+                  onClick={() => {
+                    setPickedContact(e);
+                  }}
                 />
               ))}
             </div>
             <div className="main">
-              <TitleBar username={contacts[0].username} />
-              <div className="messages">
-                {messages.map((e) => (
-                  <Message
-                    username={e.username}
-                    message={e.message}
-                    isSelf={e.username === "Bob"}
+              {pickedContact ? (
+                <>
+                  <TitleBar
+                    username={pickedContact.emoji + " " + pickedContact.name}
                   />
-                ))}
-              </div>
-              <div className="edit">
-                <textarea className="edit-box" placeholder="Type here" />
-                <div className="buttons">
-                  <button className="send-btn">Send</button>
-                  <span className="tip">Ctrl+Enter to send</span>
-                </div>
-              </div>
+                  <div className="messages">
+                    {messages.map((e) => (
+                      <Message
+                        key={e.message}
+                        username={e.username}
+                        message={e.message}
+                        isSelf={e.username === "Bob"}
+                      />
+                    ))}
+                  </div>
+                  <div className="edit">
+                    <textarea className="edit-box" placeholder="Type here" />
+                    <div className="buttons">
+                      <button className="send-btn">Send</button>
+                      <span className="tip">Ctrl+Enter to send</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="brand">Literank</div>
+              )}
             </div>
           </div>
           <div className="status">

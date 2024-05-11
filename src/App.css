@@ -60,16 +60,28 @@ body {
 
 .contacts {
   flex: 1;
+  overflow-y: auto;
+  max-height: var(--max-h);
 }
 
 .main {
   flex: 4;
-  height: 60vh;
+  height: var(--max-h);
   background-color: whitesmoke;
   border-top-right-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
   display: flex;
   flex-direction: column;
+}
+
+.brand {
+  color: rgba(0, 0, 0, 0.08);
+  user-select: none;
+  font-size: 3em;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .main .messages {
