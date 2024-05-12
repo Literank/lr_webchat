@@ -92,6 +92,20 @@ function App() {
       resultEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [contactMessages, groupMessages, pickedContact]);
 
+  useEffect(() => {
+    // Avoid red dots for the current conversation
+    if (!pickedContact) return;
+    if (isGroupChatting) {
+      setGroupNotifications((gn) => {
+        return { ...gn, [pickedContact.id]: false };
+      });
+    } else {
+      setContactNotifications((cn) => {
+        return { ...cn, [pickedContact.sid]: false };
+      });
+    }
+  }, [contactMessages, groupMessages, pickedContact, isGroupChatting]);
+
   const login = (emoji, name) => {
     setUser({ emoji, name });
     setLogged(true);
@@ -226,9 +240,6 @@ function App() {
                         }
                         onClick={() => {
                           setPickedContact(e);
-                          if (pickedContact) {
-                            readMessage(pickedContact.id);
-                          }
                           readMessage(e.id);
                         }}
                       />
@@ -244,9 +255,6 @@ function App() {
                         }
                         onClick={() => {
                           setPickedContact(e);
-                          if (pickedContact) {
-                            readMessage(pickedContact.sid);
-                          }
                           readMessage(e.sid);
                         }}
                       />
