@@ -1,0 +1,72 @@
+@import url(../vars.css);
+
+.modal {
+  position: fixed; /* Position the element relative to the browser window */
+  top: 0;
+  left: 0;
+  width: 100%; /* Cover the entire viewport width */
+  height: 100%; /* Cover the entire viewport height */
+  background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black background */
+  z-index: 999; /* Ensure the background is behind other elements */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  width: 20em;
+  height: 20em;
+  background-color: aliceblue;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.group-title {
+  font-size: large;
+  text-align: center;
+  padding: 0.5em;
+  border-bottom: solid 1px lightgray;
+}
+
+.group-users {
+  padding: 1em;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.create-buttons {
+  padding: 0.5em;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.contact-label {
+  display: block;
+  font-size: large;
+  margin-top: 0.2em;
+  cursor: pointer;
+}
+
+.group-name-ipt {
+  border: none;
+  width: 100%;
+  font-size: large;
+  border-bottom: solid 1px var(--theme-color);
+  margin-bottom: 0.5em;
+}
+
+.group-name-ipt:focus {
+  outline: solid 1px var(--theme-color);
+}
+
+.cancel-btn {
+  padding: 3px 10px;
+  background-color: white;
+  border: none;
+  border-bottom: solid 2px var(--secondary-color);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  color: orangered;
+}

@@ -4,14 +4,30 @@ import Contact from "./components/contact";
 import Message from "./components/message";
 import TitleBar from "./components/title-bar";
 import LoginForm from "./components/login-form";
+import CreateGroup from "./components/create-group";
 import clsx from "clsx";
 import io from "socket.io-client";
 
+function randomString(length) {
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
 function App() {
   const [logged, setLogged] = useState(false);
+  const [creatingGroup, setCreatingGroup] = useState(false);
+  const [isGroupChatting, setIsGroupChatting] = useState(false);
+
   const [user, setUser] = useState({ emoji: "", name: "" });
   const [conn, setConn] = useState(null);
   const [contacts, setContacts] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [contactMessages, setContactMessages] = useState({});
   const [pickedContact, setPickedContact] = useState(null);
   const [typedContent, setTypedContent] = useState("");
@@ -64,6 +80,25 @@ function App() {
     });
     setTypedContent("");
   };
+  const createGroup = (userSids, groupName) => {
+    if (!conn) {
+      return;
+    }
+    if (!groupName) {
+      alert("Group name needed.");
+      return;
+    }
+    if (!userSids || userSids.length < 2) {
+      alert("A group takes at least 3 users.");
+      return;
+    }
+    userSids.push(conn.id);
+    const roomId = randomString(6);
+    conn.emit("create-group", { sids: userSids, name: groupName, id: roomId });
+    setCreatingGroup(false);
+    setIsGroupChatting(true);
+    setGroups([...groups, { name: groupName, id: roomId }]);
+  };
   const lastMessage = (messages) => {
     if (!messages) {
       return "";
@@ -74,92 +109,116 @@ function App() {
     return "";
   };
   return (
-    <div className="app">
-      <h1 className={clsx("app-name", { "center-name": !logged })}>
-        Literank Web Chat
-      </h1>
-      {!logged ? (
-        <LoginForm callback={login} />
-      ) : (
-        <>
-          <div className="segments">
-            <span className="segment left-seg picked">Chat</span>
-            <span className="segment right-seg">Groups</span>
-          </div>
-          <div className="card">
-            <div className="contacts">
-              {contacts.map((e) => (
-                <Contact
-                  key={e.sid}
-                  username={e.emoji + " " + e.name}
-                  message={lastMessage(contactMessages[e.sid])}
-                  onClick={() => {
-                    setPickedContact(e);
-                  }}
-                />
-              ))}
-            </div>
-            <div className="main">
-              {pickedContact ? (
-                <>
-                  <TitleBar
-                    username={pickedContact.emoji + " " + pickedContact.name}
-                  />
-                  <div className="messages">
-                    {(contactMessages[pickedContact.sid] || []).map((e, i) => (
-                      <Message
-                        key={i}
-                        username={e.isSelf ? user.name : pickedContact.name}
-                        message={e.message}
-                        isSelf={e.isSelf}
-                      />
-                    ))}
-                    <div ref={resultEndRef}></div>
-                  </div>
-                  <div className="edit">
-                    <textarea
-                      className="edit-box"
-                      placeholder="Type here"
-                      value={typedContent}
-                      onChange={(e) => setTypedContent(e.target.value)}
-                      onKeyUp={(e) => {
-                        if (e.ctrlKey && e.key === "Enter") {
-                          chat(pickedContact.sid, typedContent);
-                        }
-                      }}
-                    />
-                    <div className="buttons">
-                      <button
-                        className="send-btn"
-                        onClick={() => {
-                          chat(pickedContact.sid, typedContent);
-                        }}
-                      >
-                        Send
-                      </button>
-                      <span className="tip">Ctrl+Enter to send</span>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="brand">Literank</div>
-              )}
-            </div>
-          </div>
-          <div className="status">
-            <span>
-              {user.emoji} {user.name}
-            </span>
-            <div className="connection-status">
+    <>
+      <div className="app">
+        <h1 className={clsx("app-name", { "center-name": !logged })}>
+          Literank Web Chat
+        </h1>
+        {!logged ? (
+          <LoginForm callback={login} />
+        ) : (
+          <>
+            <div className="segments">
               <span
-                className={clsx("dot", { connected: conn?.connected })}
-              ></span>
-              <span>{conn?.connected ? "Connected" : "Disconnected"}</span>
+                className={clsx("segment left-seg", {
+                  picked: !isGroupChatting,
+                })}
+              >
+                Chat
+              </span>
+              <span
+                className={clsx("segment right-seg", {
+                  picked: isGroupChatting,
+                })}
+              >
+                Groups
+              </span>
             </div>
-          </div>
-        </>
+            <div className="card">
+              <div className="contacts">
+                {contacts.map((e) => (
+                  <Contact
+                    key={e.sid}
+                    username={e.emoji + " " + e.name}
+                    message={lastMessage(contactMessages[e.sid])}
+                    onClick={() => {
+                      setPickedContact(e);
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="main">
+                {pickedContact ? (
+                  <>
+                    <TitleBar
+                      username={pickedContact.emoji + " " + pickedContact.name}
+                      onClick={() => setCreatingGroup(true)}
+                    />
+                    <div className="messages">
+                      {(contactMessages[pickedContact.sid] || []).map(
+                        (e, i) => (
+                          <Message
+                            key={i}
+                            username={e.isSelf ? user.name : pickedContact.name}
+                            message={e.message}
+                            isSelf={e.isSelf}
+                          />
+                        )
+                      )}
+                      <div ref={resultEndRef}></div>
+                    </div>
+                    <div className="edit">
+                      <textarea
+                        className="edit-box"
+                        placeholder="Type here"
+                        value={typedContent}
+                        onChange={(e) => setTypedContent(e.target.value)}
+                        onKeyUp={(e) => {
+                          if (e.ctrlKey && e.key === "Enter") {
+                            chat(pickedContact.sid, typedContent);
+                          }
+                        }}
+                      />
+                      <div className="buttons">
+                        <button
+                          className="send-btn"
+                          onClick={() => {
+                            chat(pickedContact.sid, typedContent);
+                          }}
+                        >
+                          Send
+                        </button>
+                        <span className="tip">Ctrl+Enter to send</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="brand">Literank</div>
+                )}
+              </div>
+            </div>
+            <div className="status">
+              <span>
+                {user.emoji} {user.name}
+              </span>
+              <div className="connection-status">
+                <span
+                  className={clsx("dot", { connected: conn?.connected })}
+                ></span>
+                <span>{conn?.connected ? "Connected" : "Disconnected"}</span>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+      {creatingGroup && (
+        <CreateGroup
+          contacts={contacts}
+          callback={createGroup}
+          close={() => setCreatingGroup(false)}
+        />
       )}
-    </div>
+    </>
   );
 }
 
