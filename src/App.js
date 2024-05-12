@@ -31,6 +31,7 @@ function App() {
   const [groups, setGroups] = useState([]);
   const [contactMessages, setContactMessages] = useState({});
   const [groupMessages, setGroupMessages] = useState({});
+  const [contactNotifications, setContactNotifications] = useState({});
   const [pickedContact, setPickedContact] = useState(null);
   const [typedContent, setTypedContent] = useState("");
   const resultEndRef = useRef(null);
@@ -52,6 +53,9 @@ function App() {
         const oldMessages = cm[from] || [];
         const newMessages = [...oldMessages, entry];
         return { ...cm, [from]: newMessages };
+      });
+      setContactNotifications((cn) => {
+        return { ...cn, [from]: true };
       });
     });
     socket.on("create-group", (data) => {
@@ -145,6 +149,11 @@ function App() {
     }
     return "";
   };
+  const readMessage = (id) => {
+    setContactNotifications((cn) => {
+      return { ...cn, [id]: false };
+    });
+  };
   return (
     <>
       <div className="app">
@@ -197,8 +206,16 @@ function App() {
                         key={e.sid}
                         username={e.emoji + " " + e.name}
                         message={lastMessage(contactMessages[e.sid])}
+                        notify={
+                          e.sid !== pickedContact?.sid &&
+                          contactNotifications[e.sid]
+                        }
                         onClick={() => {
                           setPickedContact(e);
+                          if (pickedContact) {
+                            readMessage(pickedContact.sid);
+                          }
+                          readMessage(e.sid);
                         }}
                       />
                     ))}

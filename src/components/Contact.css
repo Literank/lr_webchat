@@ -5,6 +5,7 @@
   border-bottom: solid 1px var(--theme-color);
   text-align: left;
   cursor: pointer;
+  position: relative;
 }
 
 .name {
@@ -27,4 +28,14 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.notify-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background-color: orangered;
+  border-radius: 50%;
 }
