@@ -5,6 +5,7 @@ import Message from "./components/message";
 import TitleBar from "./components/title-bar";
 import LoginForm from "./components/login-form";
 import CreateGroup from "./components/create-group";
+import Group from "./components/group";
 import clsx from "clsx";
 import io from "socket.io-client";
 
@@ -29,6 +30,7 @@ function App() {
   const [contacts, setContacts] = useState([]);
   const [groups, setGroups] = useState([]);
   const [contactMessages, setContactMessages] = useState({});
+  const [groupMessages, setGroupMessages] = useState({});
   const [pickedContact, setPickedContact] = useState(null);
   const [typedContent, setTypedContent] = useState("");
   const resultEndRef = useRef(null);
@@ -52,32 +54,67 @@ function App() {
         return { ...cm, [from]: newMessages };
       });
     });
+    socket.on("create-group", (data) => {
+      const { name, id } = data;
+      setGroups((gs) => [...gs, { name, id }]);
+      setGroupMessages((gm) => {
+        return { ...gm, [id]: [] };
+      });
+    });
+    socket.on("group-chat", (data) => {
+      const { speaker, msg, room: roomId } = data;
+      const entry = { name: speaker, message: msg, isSelf: false };
+      setGroupMessages((gm) => {
+        const oldMessages = gm[roomId] || [];
+        const newMessages = [...oldMessages, entry];
+        return { ...gm, [roomId]: newMessages };
+      });
+    });
     socket.emit("user-join", user);
     setConn(socket);
   }, [user]);
 
   useEffect(() => {
     if (!pickedContact) return;
-    const messages = contactMessages[pickedContact.sid] || [];
+    const messages =
+      contactMessages[pickedContact.sid] ||
+      groupMessages[pickedContact.id] ||
+      [];
     if (messages.length > 0)
       resultEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [contactMessages, pickedContact]);
+  }, [contactMessages, groupMessages, pickedContact]);
 
   const login = (emoji, name) => {
     setUser({ emoji, name });
     setLogged(true);
   };
-  const chat = (toSid, message) => {
+  const chat = (to, message) => {
     if (!conn || !message.trim()) {
       return;
     }
-    const entry = { name: user.name, message, isSelf: true };
-    conn.emit("chat", { to: toSid, from: conn.id, msg: message });
-    setContactMessages((cm) => {
-      const oldMessages = cm[toSid] || [];
-      const newMessages = [...oldMessages, entry];
-      return { ...cm, [toSid]: newMessages };
-    });
+    const fullName = user.emoji + " " + user.name;
+    const entry = { name: fullName, message, isSelf: true };
+    if (isGroupChatting) {
+      const roomId = to;
+      conn.emit("group-chat", {
+        room: roomId,
+        speaker: fullName,
+        msg: message,
+      });
+      setGroupMessages((gm) => {
+        const oldMessages = gm[roomId] || [];
+        const newMessages = [...oldMessages, entry];
+        return { ...gm, [roomId]: newMessages };
+      });
+    } else {
+      conn.emit("chat", { to, from: conn.id, msg: message });
+      setContactMessages((cm) => {
+        const oldMessages = cm[to] || [];
+        const newMessages = [...oldMessages, entry];
+        return { ...cm, [to]: newMessages };
+      });
+    }
+
     setTypedContent("");
   };
   const createGroup = (userSids, groupName) => {
@@ -97,7 +134,7 @@ function App() {
     conn.emit("create-group", { sids: userSids, name: groupName, id: roomId });
     setCreatingGroup(false);
     setIsGroupChatting(true);
-    setGroups([...groups, { name: groupName, id: roomId }]);
+    setPickedContact({ name: groupName, id: roomId });
   };
   const lastMessage = (messages) => {
     if (!messages) {
@@ -123,6 +160,10 @@ function App() {
                 className={clsx("segment left-seg", {
                   picked: !isGroupChatting,
                 })}
+                onClick={() => {
+                  setIsGroupChatting(false);
+                  setPickedContact(null);
+                }}
               >
                 Chat
               </span>
@@ -130,41 +171,74 @@ function App() {
                 className={clsx("segment right-seg", {
                   picked: isGroupChatting,
                 })}
+                onClick={() => {
+                  setIsGroupChatting(true);
+                  setPickedContact(null);
+                }}
               >
                 Groups
               </span>
             </div>
             <div className="card">
               <div className="contacts">
-                {contacts.map((e) => (
-                  <Contact
-                    key={e.sid}
-                    username={e.emoji + " " + e.name}
-                    message={lastMessage(contactMessages[e.sid])}
-                    onClick={() => {
-                      setPickedContact(e);
-                    }}
-                  />
-                ))}
+                {isGroupChatting
+                  ? groups.map((e) => (
+                      <Group
+                        key={e.id}
+                        name={e.name}
+                        message={lastMessage(groupMessages[e.id])}
+                        onClick={() => {
+                          setPickedContact(e);
+                        }}
+                      />
+                    ))
+                  : contacts.map((e) => (
+                      <Contact
+                        key={e.sid}
+                        username={e.emoji + " " + e.name}
+                        message={lastMessage(contactMessages[e.sid])}
+                        onClick={() => {
+                          setPickedContact(e);
+                        }}
+                      />
+                    ))}
               </div>
               <div className="main">
                 {pickedContact ? (
                   <>
                     <TitleBar
-                      username={pickedContact.emoji + " " + pickedContact.name}
+                      name={
+                        isGroupChatting
+                          ? pickedContact.name
+                          : pickedContact.emoji + " " + pickedContact.name
+                      }
                       onClick={() => setCreatingGroup(true)}
+                      isGroup={isGroupChatting}
                     />
                     <div className="messages">
-                      {(contactMessages[pickedContact.sid] || []).map(
-                        (e, i) => (
-                          <Message
-                            key={i}
-                            username={e.isSelf ? user.name : pickedContact.name}
-                            message={e.message}
-                            isSelf={e.isSelf}
-                          />
-                        )
-                      )}
+                      {isGroupChatting
+                        ? (groupMessages[pickedContact.id] || []).map(
+                            (e, i) => (
+                              <Message
+                                key={i}
+                                username={e.name}
+                                message={e.message}
+                                isSelf={e.isSelf}
+                              />
+                            )
+                          )
+                        : (contactMessages[pickedContact.sid] || []).map(
+                            (e, i) => (
+                              <Message
+                                key={i}
+                                username={
+                                  e.isSelf ? user.name : pickedContact.name
+                                }
+                                message={e.message}
+                                isSelf={e.isSelf}
+                              />
+                            )
+                          )}
                       <div ref={resultEndRef}></div>
                     </div>
                     <div className="edit">
@@ -175,7 +249,12 @@ function App() {
                         onChange={(e) => setTypedContent(e.target.value)}
                         onKeyUp={(e) => {
                           if (e.ctrlKey && e.key === "Enter") {
-                            chat(pickedContact.sid, typedContent);
+                            chat(
+                              isGroupChatting
+                                ? pickedContact.id
+                                : pickedContact.sid,
+                              typedContent
+                            );
                           }
                         }}
                       />
@@ -183,7 +262,12 @@ function App() {
                         <button
                           className="send-btn"
                           onClick={() => {
-                            chat(pickedContact.sid, typedContent);
+                            chat(
+                              isGroupChatting
+                                ? pickedContact.id
+                                : pickedContact.sid,
+                              typedContent
+                            );
                           }}
                         >
                           Send
@@ -214,6 +298,7 @@ function App() {
       {creatingGroup && (
         <CreateGroup
           contacts={contacts}
+          pal={pickedContact}
           callback={createGroup}
           close={() => setCreatingGroup(false)}
         />

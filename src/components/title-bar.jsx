@@ -5,14 +5,18 @@ const TitleBar = (props) => {
   return (
     <div className="title">
       <span></span>
-      <span>{props.username}</span>
-      <button
-        className="create-btn"
-        title="Create Group"
-        onClick={props.onClick}
-      >
-        ➕
-      </button>
+      <span>{props.name}</span>
+      {props.isGroup ? (
+        <span></span>
+      ) : (
+        <button
+          className="create-btn"
+          title="Create Group"
+          onClick={props.onClick}
+        >
+          ➕
+        </button>
+      )}
     </div>
   );
 };
