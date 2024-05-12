@@ -32,6 +32,7 @@ function App() {
   const [contactMessages, setContactMessages] = useState({});
   const [groupMessages, setGroupMessages] = useState({});
   const [contactNotifications, setContactNotifications] = useState({});
+  const [groupNotifications, setGroupNotifications] = useState({});
   const [pickedContact, setPickedContact] = useState(null);
   const [typedContent, setTypedContent] = useState("");
   const resultEndRef = useRef(null);
@@ -72,6 +73,9 @@ function App() {
         const oldMessages = gm[roomId] || [];
         const newMessages = [...oldMessages, entry];
         return { ...gm, [roomId]: newMessages };
+      });
+      setGroupNotifications((gn) => {
+        return { ...gn, [roomId]: true };
       });
     });
     socket.emit("user-join", user);
@@ -150,9 +154,24 @@ function App() {
     return "";
   };
   const readMessage = (id) => {
-    setContactNotifications((cn) => {
-      return { ...cn, [id]: false };
-    });
+    if (isGroupChatting) {
+      setGroupNotifications((gn) => {
+        return { ...gn, [id]: false };
+      });
+    } else {
+      setContactNotifications((cn) => {
+        return { ...cn, [id]: false };
+      });
+    }
+  };
+  const shouldNotify = () => {
+    if (isGroupChatting) {
+      // Notify for Chat Tab
+      return Object.values(contactNotifications).some((e) => e === true);
+    } else {
+      // Notify for Groups Tab
+      return Object.values(groupNotifications).some((e) => e === true);
+    }
   };
   return (
     <>
@@ -174,6 +193,9 @@ function App() {
                   setPickedContact(null);
                 }}
               >
+                {isGroupChatting && shouldNotify() && (
+                  <span className="notify-dot"></span>
+                )}
                 Chat
               </span>
               <span
@@ -185,6 +207,9 @@ function App() {
                   setPickedContact(null);
                 }}
               >
+                {!isGroupChatting && shouldNotify() && (
+                  <span className="notify-dot"></span>
+                )}
                 Groups
               </span>
             </div>
@@ -196,8 +221,15 @@ function App() {
                         key={e.id}
                         name={e.name}
                         message={lastMessage(groupMessages[e.id])}
+                        notify={
+                          e.id !== pickedContact?.id && groupNotifications[e.id]
+                        }
                         onClick={() => {
                           setPickedContact(e);
+                          if (pickedContact) {
+                            readMessage(pickedContact.id);
+                          }
+                          readMessage(e.id);
                         }}
                       />
                     ))
