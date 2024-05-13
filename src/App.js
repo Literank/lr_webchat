@@ -26,6 +26,8 @@ const SOUNDS = {
   ding: process.env.PUBLIC_URL + "/ding.mp3",
 };
 
+const CHAT_SERVER_URL = process.env.CHAT_SERVER_URL || "http://localhost:4000";
+
 function dingIt() {
   const sound = new Howl({
     src: [SOUNDS.ding],
@@ -52,7 +54,7 @@ function App() {
 
   useEffect(() => {
     if (!user.name) return;
-    const socket = io("http://localhost:4000");
+    const socket = io(CHAT_SERVER_URL);
     socket.on("error", (error) => {
       console.error("Socket error:", error);
     });
