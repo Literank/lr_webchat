@@ -8,6 +8,7 @@ import CreateGroup from "./components/create-group";
 import Group from "./components/group";
 import clsx from "clsx";
 import io from "socket.io-client";
+import { Howl } from "howler";
 
 function randomString(length) {
   const characters =
@@ -18,6 +19,18 @@ function randomString(length) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
   return result;
+}
+
+// Sounds from https://pixabay.com/sound-effects/search/ding/
+const SOUNDS = {
+  ding: process.env.PUBLIC_URL + "/ding.mp3",
+};
+
+function dingIt() {
+  const sound = new Howl({
+    src: [SOUNDS.ding],
+  });
+  sound.play();
 }
 
 function App() {
@@ -55,8 +68,18 @@ function App() {
         const newMessages = [...oldMessages, entry];
         return { ...cm, [from]: newMessages };
       });
-      setContactNotifications((cn) => {
-        return { ...cn, [from]: true };
+      // Hack to get `pickedContact` and `isGroupChatting` state value
+      setPickedContact((pc) => {
+        setIsGroupChatting((igc) => {
+          if (!pc || igc || pc.sid !== from) {
+            dingIt();
+            setContactNotifications((cn) => {
+              return { ...cn, [from]: true };
+            });
+          }
+          return igc;
+        });
+        return pc;
       });
     });
     socket.on("create-group", (data) => {
@@ -74,8 +97,18 @@ function App() {
         const newMessages = [...oldMessages, entry];
         return { ...gm, [roomId]: newMessages };
       });
-      setGroupNotifications((gn) => {
-        return { ...gn, [roomId]: true };
+      // Hack to get `pickedContact` and `isGroupChatting` state value
+      setPickedContact((pc) => {
+        setIsGroupChatting((igc) => {
+          if (!pc || !igc || pc.id !== roomId) {
+            dingIt();
+            setGroupNotifications((gn) => {
+              return { ...gn, [roomId]: true };
+            });
+          }
+          return igc;
+        });
+        return pc;
       });
     });
     socket.emit("user-join", user);
@@ -91,20 +124,6 @@ function App() {
     if (messages.length > 0)
       resultEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [contactMessages, groupMessages, pickedContact]);
-
-  useEffect(() => {
-    // Avoid red dots for the current conversation
-    if (!pickedContact) return;
-    if (isGroupChatting) {
-      setGroupNotifications((gn) => {
-        return { ...gn, [pickedContact.id]: false };
-      });
-    } else {
-      setContactNotifications((cn) => {
-        return { ...cn, [pickedContact.sid]: false };
-      });
-    }
-  }, [contactMessages, groupMessages, pickedContact, isGroupChatting]);
 
   const login = (emoji, name) => {
     setUser({ emoji, name });
